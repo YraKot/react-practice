@@ -1,19 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import TodoList from './TodoList'
 import { Context } from './context';
+import reducer from './reducer';
 
 export const App = () => {
-	const [todos, setTodos] = useState([]);
+	const [state, dispatch] = useReducer(reducer, JSON.parse(localStorage.getItem('todos')));
 	const [todoTitle, setTodoTitle] = useState('');
 
 	useEffect(() => {
-		const raw = JSON.parse(localStorage.getItem('todos')) || [];
-		setTodos(raw);
-	}, []);
-
-	useEffect(() => {
-		localStorage.setItem('todos', JSON.stringify(todos));
-	}, [todos]);
+		localStorage.setItem('todos', JSON.stringify(state));
+	}, [state]);
 
 	const handleChange = (e) => {
 		setTodoTitle(e.target.value);
@@ -21,36 +17,18 @@ export const App = () => {
 
 	const addTodo = (e) => {
 		if (e.key === 'Enter'){
-			setTodos([
-				...todos,
-				{
-					id: Date.now(),
-					title: todoTitle,
-					completed: false
-				}
-			]);
+			dispatch({
+				type: 'add',
+				payload: todoTitle
+			});
 			setTodoTitle('');
 		}
 	}
 
-	const removeTodo = (id) => {	
-		setTodos(todos.filter(todo => todo.id !== id));
-	};
-
-	const toggleTodo = (id) => {
-		setTodos(todos.map(todo => {
-			if (todo.id === id) {
-				todo.completed = !todo.completed;
-			}
-			return todo;
-		}))
-	}
-
 	return (
-		<Context.Provider value={{ removeTodo, toggleTodo }}>
+		<Context.Provider value={{ dispatch }}>
 			<div className="container">
 				<h1>Todo app</h1>
-
 				<div className="input-field">
 					<input 
 						type="text"
@@ -61,7 +39,7 @@ export const App = () => {
 					<label>Todo name</label>
 				</div>
 
-				<TodoList todos={todos} />
+				<TodoList todos={state} />
 			</div>
 		</Context.Provider>
 	);
